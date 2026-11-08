@@ -1,4 +1,6 @@
 from pathlib import Path
+import io
+import zipfile
 import fitz
 from docx import Document
 
@@ -9,12 +11,20 @@ def extract_text(filename: str, data: bytes) -> str:
     if ext not in ALLOWED_EXTENSIONS:
         raise ValueError("Only PDF and DOCX files are supported.")
     if ext == ".pdf":
+        if not data.startswith(b"%PDF-"):
+            raise ValueError("The uploaded file is not a valid PDF.")
         doc = fitz.open(stream=data, filetype="pdf")
-        text = "\n".join(page.get_text("text") for page in doc)
-        doc.close()
+        try:
+            text = "\n".join(page.get_text("text") for page in doc)
+        finally:
+            doc.close()
     else:
-        import io
-        document = Document(io.BytesIO(data))
+        if not zipfile.is_zipfile(io.BytesIO(data)):
+            raise ValueError("The uploaded file is not a valid DOCX document.")
+        try:
+            document = Document(io.BytesIO(data))
+        except Exception as exc:
+            raise ValueError("The DOCX document could not be read.") from exc
         parts = [p.text for p in document.paragraphs]
         for table in document.tables:
             for row in table.rows:
