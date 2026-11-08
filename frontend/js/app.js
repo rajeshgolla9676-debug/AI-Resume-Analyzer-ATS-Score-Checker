@@ -18,3 +18,25 @@ function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":
 function renderReport(d){$("emptyState").classList.add("hidden");const el=$("reportView");el.classList.remove("hidden");el.innerHTML='<div class="eyebrow">ANALYSIS REPORT</div><div class="report-score">'+d.ats_score+'<small style="font-size:16px;color:#899"> / 100</small></div><p style="font-size:11px;color:#8790a5">Estimated compatibility score · not an official ATS result.</p><canvas id="scoreChart" height="150"></canvas><div class="report-section"><h4>Matched skills</h4>'+listPills(d.matched_skills)+'</div><div class="report-section"><h4>Missing skills</h4>'+listPills(d.missing_skills,true)+'</div><div class="report-section"><h4>Matched keywords</h4>'+listPills(d.matched_keywords)+'</div><div class="report-section"><h4>Missing keywords</h4>'+listPills(d.missing_keywords,true)+'</div>'+["strengths","weaknesses","suggestions"].map(k=>'<div class="report-section"><h4>'+k.replace("_"," ")+'</h4><ul>'+((d[k]||[]).map(x=>'<li>'+escapeHtml(x)+'</li>').join("")||"<li>None supplied.</li>")+'</ul></div>').join("")+'<button class="btn btn-primary full" id="downloadReport">Download PDF report</button>';const b=d.breakdown||{};new Chart($("scoreChart"),{type:"bar",data:{labels:["Skills","Keywords","Education","Projects","Structure"],datasets:[{data:[b.skills_matching||0,b.keyword_matching||0,b.education_matching||0,b.projects_experience||0,b.resume_structure||0],backgroundColor:["#7658ed","#4c83f4","#9c8bf2","#68a2f5","#b6a8f8"],borderRadius:6}]},options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100}}}});$("downloadReport").onclick=async()=>{const r=await fetch(API_BASE_URL+"/api/report/"+encodeURIComponent(d.report_id)+"/pdf",{headers:{Authorization:"Bearer "+accessToken}});if(!r.ok)return alert("PDF download failed.");const blob=await r.blob(),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="ats-analysis-report.pdf";a.click();URL.revokeObjectURL(url)}}
 async function loadHistory(){try{const r=await fetch(API_BASE_URL+"/api/history",{headers:{Authorization:"Bearer "+accessToken}}),d=await r.json();$("historyList").innerHTML=(d.reports||[]).map(x=>'<div class="history-item"><span>'+escapeHtml(x.analysis_data?.job_title||"Job analysis")+' · '+new Date(x.created_at).toLocaleDateString()+'</span><b>'+x.ats_score+'/100</b></div>').join("")||"No analyses yet."}catch(e){$("historyList").textContent="History is unavailable."}}
 $("logoutBtn").onclick=()=>{accessToken=null;resumeId=null;latestReport=null;$("workspace").classList.add("hidden");document.querySelector("main").classList.remove("hidden");document.querySelector(".topbar").classList.remove("hidden");document.querySelector("footer").classList.remove("hidden")};
+
+
+// Scroll reveal motion (respects the reduced-motion preference in CSS).
+(function initScrollReveals(){
+  const targets = document.querySelectorAll(".section-head,.feature,.steps>div,.metrics>div,.cta,.workspace .panel");
+  if (!targets.length) return;
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if (!("IntersectionObserver" in window)) return;
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12, rootMargin: "0px 0px -35px 0px" });
+  targets.forEach((element, index) => {
+    element.classList.add("reveal");
+    element.classList.add("reveal-delay-" + (index % 4));
+    observer.observe(element);
+  });
+})();
