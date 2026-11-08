@@ -129,6 +129,21 @@ def improve_resume():
     score = calculate_score(body["resume_text"],body["job_description"])
     return jsonify(analyze_with_gemini(body["resume_text"],body["job_description"],score))
 
+
+@app.delete("/api/resumes/<resume_id>")
+def delete_resume(resume_id):
+    user, error = current_user()
+    if error: return error
+    try:
+        client = admin_client()
+        row = client.table("resumes").select("id,file_path").eq("id",resume_id).eq("user_id",user.id).single().execute().data
+        if not row: return fail("Resume not found.",404)
+        client.storage.from_(Config.STORAGE_BUCKET).remove([row["file_path"]])
+        client.table("resumes").delete().eq("id",resume_id).eq("user_id",user.id).execute()
+        return jsonify({"message":"Resume and stored file deleted."})
+    except Exception:
+        return fail("Could not delete resume.",500)
+
 @app.get("/api/dashboard")
 def dashboard():
     user, error = current_user()
