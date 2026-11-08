@@ -1,8 +1,5 @@
 // Public browser configuration only. Never put a Supabase service-role or Gemini key here.
-const API_BASE_URL = "http://localhost:5000";
-const SUPABASE_URL = "https://YOUR_PROJECT.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
-const supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const API_BASE_URL = "https://ai-resume-analyzer-ats-score-checke-neon.vercel.app";
 let accessToken = null, resumeId = null, selectedFile = null, latestReport = null, mode = "login";
 const $ = id => document.getElementById(id);
 const modal = $("authModal");
